@@ -5,7 +5,7 @@
 
 效果图：
 未登陆前
-![image](https://github.com/lengfengyuyu/django2/blob/mrbs/mrbs/static/mrbs/pic/1.png)
+![image](https://github.com/lengfengyuyu/django2/blob/mrbs/mrbs/static/mrbs/pic/2.png)
 
 登录之后
-![image](https://github.com/lengfengyuyu/django2/blob/mrbs/mrbs/static/mrbs/pic/2.png)
+![image](https://github.com/lengfengyuyu/django2/blob/mrbs/mrbs/static/mrbs/pic/1.png)
