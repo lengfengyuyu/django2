@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+{% load static from staticfiles %}
+
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="https://v3.bootcss.com/favicon.ico">
+    <link rel="stylesheet" href="{% static 'mrbs/signin.css'%}">
+    <link rel="stylesheet" href="{% static 'common/bootstrap/css/bootstrap.min.css' %}"/>
+    <title>MRBS登录</title>
+    <style>
+
+    </style>
+  </head>
+
+  <body style="background-color: #eee;">
+
+    <div class="container">
+
+      <form class="form-signin" action="" method="POST" novalidate>
+          {% csrf_token %}
+        <h2 class="form-signin-heading">请登录</h2>
+        <label for="username" class="sr-only">用户名</label>
+        <input type="text" name="username" id="username" class="form-control" placeholder="用户名" required="" autofocus="">
+        <label for="inputPassword" class="sr-only">密码</label>
+        <input type="password" id="inputPassword"  name="password" class="form-control" placeholder="密码" required="">
+
+        <button class="btn btn-lg btn-primary btn-block" type="submit">登录</button>
+      </form>
+
+    </div> <!-- /container -->
+
+</body></html>

@@ -1,0 +1,216 @@
+{% load static from staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'common/bootstrap/css/bootstrap.min.css' %}"/>
+    <script type="text/javascript" src="{% static 'common/jquery/jquery-3.3.1.js' %}"></script>
+    <script type="text/javascript" src="{% static 'common/bootstrap/js/bootstrap.min.js' %}"></script>
+    <link rel="stylesheet" media="screen" href="{% static 'datetime-picker/css/bootstrap-datetimepicker.min.css' %}">
+    <script type="text/javascript" src="{% static 'datetime-picker/js/bootstrap-datetimepicker.min.js' %}"></script>
+
+
+    <title>MRBS</title>
+    <style>
+        .item_my {
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        .item_notme {
+            background-color: #9a9afb;
+            color: white;
+        }
+
+        .item_tmp {
+            background-color: #66afe9;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+        <h3>会议室预定系统 {% if request.user.username %}<span class="label label-success" id="tag-login"
+                          tts="{{ request.user.username }}">
+            {{ request.user.username }}</span>{% endif %}</h3>
+    </div>
+    <!--日期选取-->
+    <div class="row col-lg-3 col-md-3 col-sm-3 pull-right">
+        <div class="input-group date form_date" data-date="" data-date-format="yyyy-mm-dd"
+             data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+            <input class="form-control date-value" size="16" type="text" value="{{ ctime|date:"Y-m-d" }}" readonly>
+            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+        </div>
+        <input type="hidden" id="dtp_input2" value=""/><br/>
+
+    </div>
+    <!--日程-->
+    <div class="row">
+        {% csrf_token %}
+        <table class="table table-bordered table-striped col-lg-1 ">
+            <thead>
+            <tr>
+                <th>会议室/时间</th>
+                {% for item in time_list %}
+                    <th>{{ item.1 }}</th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody id="tbody-book">
+            {{ html_str|safe }}
+            </tbody>
+        </table>
+    </div>
+    <div class="row pull-right">
+        <button type="button" class="btn btn-primary btn-save">保存</button>
+
+    </div>
+</div>
+<script>
+
+    $('.form_date').datetimepicker({
+
+        weekStart: 1,
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        minView: 2,
+        forceParse: 0
+    });
+
+    var pd = {
+        "ADD": {},
+        "DEL": {},
+    }
+    var tmpUser = $("#tag-login").attr('tts');
+    // 2 array - remove func
+    Array.prototype.indexOf = function (val) {
+        for (var i = 0; i < this.length; i++) {
+            if (this[i] == val) return i;
+        }
+        return -1;
+    };
+    Array.prototype.remove = function (val) {
+        var index = this.indexOf(val);
+        if (index > -1) {
+            this.splice(index, 1);
+        }
+    };
+
+
+    // 1. 重新绑定
+    $(document).on('click', '.bitem', function () {
+        if(!tmpUser) {
+
+            location.href= "{% url 'mrbsapp:mrbs_login' %}";
+        }
+        //3 种情况
+        var room_id = $(this).attr("room_id");
+        var time_id = $(this).attr("time_id");
+        if ($(this).hasClass("item_my")) {
+            $(this).removeClass("item_my").empty();
+            if (pd.DEL[room_id]) {
+                pd.DEL[room_id].push(time_id);
+            } else {
+                pd.DEL[room_id] = [time_id,];
+            }
+        }
+        else if ($(this).hasClass("item_tmp")) {
+            $(this).removeClass("item_tmp").empty();
+            pd.ADD[room_id].remove(time_id);
+
+        } else if ($(this).hasClass("item_notme")) {
+
+        } else {
+            $(this).addClass("item_tmp");
+            if (pd.ADD[room_id]) {
+                pd.ADD[room_id].push(time_id);
+            } else {
+                pd.ADD[room_id] = [time_id,];
+            }
+        }
+
+    })
+    // 2. 日期变化- 重新去获取
+    $('.date-value').change(function () {
+        var book_date = $(this).val();
+        book_date = JSON.stringify(book_date);
+        $("#tbody-book").remove();
+
+        $.ajax({
+            url: '{% url 'mrbsapp:mrbs_get_info' %}',
+            type: "POST",
+            data: {
+                book_date: book_date,
+                csrfmiddlewaretoken: $("[name = 'csrfmiddlewaretoken']").val(),
+            },
+            success: function (data) {
+                var ahtml = '<tbody id="tbody-book">\n' + JSON.parse(data) + '</tbody>';
+                $(".table").append(ahtml);
+            }
+        })
+    })
+
+    // 3 保存
+    $('.btn-save').click(function () {
+
+        if (tmpUser) {
+            var book_date = $('.date-value').val();
+            book_date = JSON.stringify(book_date);
+            //$("#tbody-book").remove();
+            $.ajax({
+                url: '{% url 'mrbsapp:mrbs_booking' %}',
+                type: "POST",
+                data: {
+                    user: tmpUser,
+                    book_date: book_date,
+                    book_data: JSON.stringify(pd),
+                    csrfmiddlewaretoken: $("[name = 'csrfmiddlewaretoken']").val(),
+                },
+                success: function (data) {
+                    data = JSON.parse(data);
+                    console.log(data);
+
+                    if (data.status) {
+
+                        for (var i = 1; i < 4; i++) {
+                            if (pd.ADD[i]) {
+                                for (var j = 0; j < pd.ADD[i].length; j++) {
+                                    console.log(i + "," + j + "," + pd.ADD[i][j]);
+                                    $('.table').find("tr").eq(i).find("td").eq(pd.ADD[i][j]).removeClass("item_tmp").addClass("item_my").text(tmpUser);
+                                }
+                            }
+
+                            if (pd.DEL[i]) {
+                                for (var j = 0; j < pd.DEL[i].length; j++) {
+                                    console.log(i + "," + j + "," + pd.DEL[i][j]);
+                                    $('.table').find("tr").eq(i).find("td").eq(pd.DEL[i][j]).removeClass("item_my").text("");
+                                }
+                            }
+
+                        }
+
+
+                    }else{
+                        alert(data.msg);
+                    }
+                    pd = {
+                        "ADD": {},
+                        "DEL": {},
+                    }
+
+                }
+            })
+        }
+
+    });
+
+
+</script>
+</body>
+</html>
